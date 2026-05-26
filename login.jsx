@@ -1,11 +1,11 @@
 import { useState } from React
 
 export default function Login() {
-    const [email, setEmail] = usestate("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     function handleLogin(event) {
-        event.preventDeafault();
+        event.preventDefault();
         console.log("Email: ", email);
         console.log("Password: ", password);
 
@@ -25,7 +25,7 @@ return (
              />
 
              <input
-             type = "passwword"
+             type = "password"
              placeholder="Password"
              value = {password}
              onChange={(event) => setPassword(event.target.value)}
