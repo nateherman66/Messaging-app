@@ -1,9 +1,11 @@
-import { useState } from React
+import { useState } from "react"
 
 export default function Login() {
+    //Set variables to hold the email and password
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
+    //Function that handles the user submitting their username and ppasswword
     function handleLogin(event) {
         event.preventDefault();
         console.log("Email: ", email);
