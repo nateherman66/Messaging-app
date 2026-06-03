@@ -1,16 +1,27 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
     //Set variables to hold the email and password
+    const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     //Function that handles the user submitting their username and ppasswword
-    function handleLogin(event) {
+    async function handleLogin(event) {
         event.preventDefault();
-        console.log("Email: ", email);
-        console.log("Password: ", password);
-
+        const response = await fetch("http://localhost:5000/login", {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json",
+            },
+            body: JSON.stringify({
+                email,
+                password,
+            }),
+        });
+        const data = await response.json();
+        console.log(data);
     }
 
 
@@ -35,7 +46,8 @@ return (
 
              <button type = "submit"> Log in </button>
 
-             <p>Sign up</p>
+             <p>Don't have an account?</p>
+                <button type = "button" onClick={() => navigate("/signup")}> Sign up </button>
         </form>
     </div>
     )

@@ -1,14 +1,17 @@
-import {Browserrouter, Routes, Route} from "react-router-dom";
+import {BrowserRouter, Routes, Route} from "react-router-dom";
 import Login from "./Login";
 import Signup from "./Signup";
 
 function App() {
-  <Browserrouter>
+  return (
+  <BrowserRouter>
   <Routes>
     <Route path="/" element = {<Login />} />
     <Route path="/signup" element = {<Signup />} />
   </Routes>
-  </Browserrouter>
+  </BrowserRouter>
+  );
 }
 
-export default App;
+export default App; 
+

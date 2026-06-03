@@ -1,4 +1,3 @@
-import { application } from "express";
 import { useState } from "react"
 
 export default function Signup() {
@@ -8,20 +7,24 @@ export default function Signup() {
 
 
 
-function handleSignup() {
+async function handleSignup(event) {
     event.preventDefault();
 
     const response = await fetch("http://localhost:5000/signup", {
         method: "POST",
-        headers : {"Content-type": "application/json"},
+        headers : {
+            "Content-type": "application/json"
+        },
         body: JSON.stringify ({
-            username, email, password
+            username, 
+            email, 
+            password
         })
     });
     const data = await response.json();
 
     console.log(data);
-    // This information wwill be sent to the backend 
+    // This information will be sent to the backend 
 }
 
 return (
@@ -30,7 +33,7 @@ return (
             <h1>Create Account</h1>
 
             <input
-            type= "username"
+            type= "text"
             placeholder= "Username"
             value = {username}
             onChange={(event) => setUsername(event.target.value)}
