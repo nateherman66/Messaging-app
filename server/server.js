@@ -3,10 +3,12 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
 const User = require("./models/User");
+const auth = require("./middleware/auth");
 
 app.use(cors());
 app.use(express.json());
@@ -26,6 +28,14 @@ mongoose.connect(process.env.MONGO_URI)
 // respond with server running when a GET request is sent
 app.get("/", (req, res) => {
     res.send("server running");
+});
+
+app.get("/profile", auth, async (req, res) => {
+    const user = await User.findById(req.user.userID);
+
+    res.json({
+        email: user.email
+    });
 });
 
 
@@ -74,8 +84,15 @@ app.post("/login", async (req, res) => {
         return res.status(400).json({ message: "Incorrect password"});
     }
 
+    const token = jwt.sign(
+        { userID: user._id },
+        process.env.JWT_TOKEN,
+        { expiresIn: "7d" }
+    );
+
     res.json({
         message: "Login successful",
+        token,
         user: {
             username: user.username,
             email: user.email
@@ -89,4 +106,4 @@ app.post("/login", async (req, res) => {
 
 app.listen(5000, () => {
     console.log("Server started on port 5000");
-})
+});

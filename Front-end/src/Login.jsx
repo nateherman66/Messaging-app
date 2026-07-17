@@ -6,10 +6,13 @@ export default function Login() {
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [message, setMessage] = useState("");
 
     //Function that handles the user submitting their username and ppasswword
     async function handleLogin(event) {
         event.preventDefault();
+
+        try {
         const response = await fetch("http://localhost:5000/login", {
             method: "POST",
             headers: {
@@ -22,8 +25,22 @@ export default function Login() {
         });
         const data = await response.json();
         console.log(data);
+        
+        if (!response.ok) {
+            setMessage(data.message || "Login failed");
+            return
+        }
+
+        localStorage.setItem("token", data.token);
+        setMessage("Login successful!");
+
+        console.log("Login response:", data);
+    } catch (error) {
+        console.error("Login error:", error);
+        setMessage("could not connect to the server.");
     }
 
+    }
 
 return (
     <div className = "login-page">
@@ -35,6 +52,7 @@ return (
             placeholder = "Email"
             value = {email}
              onChange={(event) => setEmail(event.target.value)}
+             required
              />
 
              <input
@@ -42,14 +60,17 @@ return (
              placeholder="Password"
              value = {password}
              onChange={(event) => setPassword(event.target.value)}
+             required
              />
 
              <button type = "submit"> Log in </button>
+
+             {message && <p>{message}</p>}
 
              <p>Don't have an account?</p>
                 <button type = "button" onClick={() => navigate("/signup")}> Sign up </button>
         </form>
     </div>
     )
-}
+    }
 
