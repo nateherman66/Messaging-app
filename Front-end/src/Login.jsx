@@ -32,7 +32,7 @@ export default function Login() {
         }
 
         localStorage.setItem("token", data.token);
-        setMessage("Login successful!");
+        navigate("/chat");
 
         console.log("Login response:", data);
     } catch (error) {
