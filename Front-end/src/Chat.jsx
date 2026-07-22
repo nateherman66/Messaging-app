@@ -1,65 +1,107 @@
 import { useState } from "react";
-import "./Chat.css"
-
+import "./Chat.css";
 
 export default function Chat() {
-   const conversations = [
-        {
-        id: 1,
-        name: "Sarah",
-        lastMessage: "Are we still on for tmr?"
-        },
-        {
-        id: 2,
-        name: "Alex",
-        lastMessage: "That works for me"
-        },
-        {
-        id: 3,
-        name: "Group Study",
-        lastMessage: "I uploaded the notes"
-        },
-    ];
+  const conversations = [
+    {
+      id: 1,
+      name: "Sarah",
+      lastMessage: "Are we still on for tomorrow?",
+    },
+    {
+      id: 2,
+      name: "Alex",
+      lastMessage: "That works for me",
+    },
+    {
+      id: 3,
+      name: "Group Study",
+      lastMessage: "I uploaded the notes",
+    },
+  ];
 
-    const [selectedChat, setSelectedChat] = useState(conversations[0]);
+  const [selectedChat, setSelectedChat] = useState(conversations[0]);
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      sender: "Sarah",
+      text: "Hey! How are you?",
+    },
+    {
+      id: 2,
+      sender: "Me",
+      text: "I'm doing well!",
+    },
+  ]);
 
-    return (
-        <div className = "chat-page">
-            <aside className = "chat-sidebar">
-                <h2>Chats</h2>
+  const [newMessage, setNewMessage] = useState("");
 
-                {conversations.map((conversations) => (
-                <button
-                key = {conversations.id}
-                type = "button"
-                className = "chat-list-item"
-                onClick = {() => setSelectedChat(conversations)}
-                >
-                    <strong>{conversations.name}</strong>
-                    <span>{conversations.lastMessage}</span>
-                </button>
-                ))}
-            </aside>
+  function sendMessage(event) {
+    event.preventDefault();
 
+    if (newMessage.trim() === "") {
+      return;
+    }
 
-            <main className="chat-main">
-                <header className="chat-header">
-                    <h2>{selectedChat.name}</h2>
-                </header>
+    const message = {
+      id: Date.now(),
+      sender: "Me",
+      text: newMessage,
+    };
 
-                <div className="messages">
-                    <div className="received-message">Hey! How are you?</div>
-                     <div className="sent-message">I'm doing well!</div>
-                     <div className="received-message">
-                        {selectedChat.lastMessage}
-                     </div>
-                    </div>
+    setMessages([...messages, message]);
+    setNewMessage("");
+  }
 
-                    <form className="message-form">
-                        <input type="text" placeholder="Message" />
-                        <button type="submit">Send</button>
-                    </form>
-            </main>
+  return (
+    <div className="chat-page">
+      <aside className="chat-sidebar">
+        <h2>Chats</h2>
+
+        {conversations.map((conversation) => (
+          <button
+            key={conversation.id}
+            type="button"
+            className="chat-list-item"
+            onClick={() => setSelectedChat(conversation)}
+          >
+            <strong>{conversation.name}</strong>
+            <span>{conversation.lastMessage}</span>
+          </button>
+        ))}
+      </aside>
+
+      <main className="chat-main">
+        <header className="chat-header">
+          <h2>{selectedChat.name}</h2>
+        </header>
+
+        <div className="messages">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={
+                message.sender === "Me"
+                  ? "sent-message"
+                  : "received-message"
+              }
+            >
+              {message.text}
+            </div>
+          ))}
         </div>
-    )
+
+        <form className="message-form" onSubmit={sendMessage}>
+          <input
+            type="text"
+            placeholder="Message"
+            value={newMessage}
+            onChange={(event) => setNewMessage(event.target.value)}
+          />
+
+          <button type="submit">Send</button>
+        </form>
+      </main>
+    </div>
+  );
 }
