@@ -21,20 +21,32 @@ export default function Chat() {
   ];
 
   const [selectedChat, setSelectedChat] = useState(conversations[0]);
-  const [messages, setMessages] = useState([
+  const [messagesByChat, setMessagesByChat] = useState({
+     1: [
     {
       id: 1,
       sender: "Sarah",
       text: "Hey! How are you?",
     },
+  ],
+  2: [
     {
       id: 2,
-      sender: "Me",
-      text: "I'm doing well!",
+      sender: "Alex",
+      text: "That works for me",
     },
-  ]);
+  ],
+  3: [
+    {
+      id: 3,
+      sender: "Group Study",
+      text: "I uploaded the notes",
+    },
+  ],
+});
 
   const [newMessage, setNewMessage] = useState("");
+  const currentMessages = messagesByChat[selectedChat.id] || [];
 
   function sendMessage(event) {
     event.preventDefault();
@@ -49,7 +61,14 @@ export default function Chat() {
       text: newMessage,
     };
 
-    setMessages([...messages, message]);
+    setMessagesByChat((previousMessages) => ({
+      ...previousMessages,
+      [selectedChat.id]: [
+        ...(previousMessages[selectedChat.id] || []),
+        message
+      ],
+    }));
+
     setNewMessage("");
   }
 
@@ -77,7 +96,7 @@ export default function Chat() {
         </header>
 
         <div className="messages">
-          {messages.map((message) => (
+          {currentMessages.map((message) => (
             <div
               key={message.id}
               className={
