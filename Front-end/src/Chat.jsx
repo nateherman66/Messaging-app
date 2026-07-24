@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./Chat.css";
 
 export default function Chat() {
-  const conversations = [
+  const [conversations, setConversations] = useState([
     {
       id: 1,
       name: "Sarah",
@@ -18,7 +18,7 @@ export default function Chat() {
       name: "Group Study",
       lastMessage: "I uploaded the notes",
     },
-  ];
+  ]);
 
   const [selectedChat, setSelectedChat] = useState(conversations[0]);
   const [messagesByChat, setMessagesByChat] = useState({
@@ -72,10 +72,66 @@ export default function Chat() {
     setNewMessage("");
   }
 
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [newChatName, setNewChatName] = useState("");
+
+  function createNewChat(event) {
+    event.preventDefault();
+
+    if (newChatName.trim() === "") {
+      return;
+    }
+
+    const newConversation = {
+      id: Date.now(),
+      name: newChatName,
+      lastMessage: "No messages yet",
+    };
+
+    setConversations((previousConversations) => [
+      ...previousConversations,
+      newConversation
+    ]);
+
+    setMessagesByChat((previousMessages) => ({
+      ...previousMessages,
+      [newConversation.id]: [],
+  }));
+
+    setSelectedChat(newConversation);
+    setNewChatName("");
+    setShowNewChat(false);
+  }
+
   return (
     <div className="chat-page">
       <aside className="chat-sidebar">
         <h2>Chats</h2>
+        <button 
+        type="button"
+        className="new-chat-button"
+        onClick={() => setShowNewChat(true)}>
+          + New Chat
+        </button>
+        {showNewChat && (
+          <form className="new-chat-form" onSubmit={createNewChat}>
+            <input
+            type="text"
+            placeholder="Enter a username"
+            value={newChatName}
+            onChange={(event) => setNewChatName(event.target.value)}
+            />
+
+            <button type="submit">Create chat</button>
+
+            <button
+            type="button"
+            onClick={() => setShowNewChat(false)}
+            >
+              Cancel
+            </button>
+          </form>
+        )}
 
         {conversations.map((conversation) => (
           <button

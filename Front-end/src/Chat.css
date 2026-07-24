@@ -142,7 +142,7 @@ margin: 0%;
 
 .message-form {
     padding: 16px 20px;
-    border-top: 1px solid #015917;
+    border: 1px solid #015917;
     background-color: antiquewhite;
     display: flex;
     gap: 10px;
@@ -151,7 +151,7 @@ margin: 0%;
 .message-form input {
     flex: 1;
     padding: 12px 15px;
-    border: 1px solid #cccccc;
+    border: 1px solid #015917;
     border-radius: 20px;
     outline: none;
 }
@@ -161,6 +161,28 @@ margin: 0%;
     border: none;
     border-radius: 20px;
     cursor: pointer;
+}
+
+.new-chat-button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: #015917;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.new-chat-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.new-chat-form input {
+    padding: 10px;
+    border: 1px solid #015917;
+    border-radius: 8px;
 }
 
 @media (max-width: 700px) {
