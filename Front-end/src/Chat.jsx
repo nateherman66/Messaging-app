@@ -1,52 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Chat.css";
 
 export default function Chat() {
-  const [conversations, setConversations] = useState([
-    {
-      id: 1,
-      name: "Sarah",
-      lastMessage: "Are we still on for tomorrow?",
-    },
-    {
-      id: 2,
-      name: "Alex",
-      lastMessage: "That works for me",
-    },
-    {
-      id: 3,
-      name: "Group Study",
-      lastMessage: "I uploaded the notes",
-    },
-  ]);
-
-  const [selectedChat, setSelectedChat] = useState(conversations[0]);
-  const [messagesByChat, setMessagesByChat] = useState({
-     1: [
-    {
-      id: 1,
-      sender: "Sarah",
-      text: "Hey! How are you?",
-    },
-  ],
-  2: [
-    {
-      id: 2,
-      sender: "Alex",
-      text: "That works for me",
-    },
-  ],
-  3: [
-    {
-      id: 3,
-      sender: "Group Study",
-      text: "I uploaded the notes",
-    },
-  ],
-});
-
+  const [conversations, setConversations] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [messagesByChat, setMessagesByChat] = useState({});
   const [newMessage, setNewMessage] = useState("");
-  const currentMessages = messagesByChat[selectedChat.id] || [];
+   const [showNewChat, setShowNewChat] = useState(false);
+  const [newChatName, setNewChatName] = useState("");
+
+
+  const currentMessages = selectedChat 
+  ? messagesByChat[selectedChat._id] || []
+  : [];
+
+  useEffect(() => {
+    async function loadConversations() {
+      try {
+        const response = await fetch("http://localhost:5000/conversations");
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message);
+        }
+
+        setConversations(data);
+
+        if (data.length > 0) {
+          setSelectedChat(data[0]);
+        }
+      } catch (error) {
+        console.error("Load conversations error:", error);
+      }
+    }
+    loadConversations();
+  }, []);
 
   function sendMessage(event) {
     event.preventDefault();
@@ -63,8 +51,8 @@ export default function Chat() {
 
     setMessagesByChat((previousMessages) => ({
       ...previousMessages,
-      [selectedChat.id]: [
-        ...(previousMessages[selectedChat.id] || []),
+      [selectedChat._id]: [
+        ...(previousMessages[selectedChat._id] || []),
         message
       ],
     }));
@@ -72,36 +60,51 @@ export default function Chat() {
     setNewMessage("");
   }
 
-  const [showNewChat, setShowNewChat] = useState(false);
-  const [newChatName, setNewChatName] = useState("");
+ 
 
-  function createNewChat(event) {
+  const createNewChat = async (event) => {
     event.preventDefault();
 
-    if (newChatName.trim() === "") {
+    if (!newChatName.trim()) {
       return;
     }
 
-    const newConversation = {
-      id: Date.now(),
-      name: newChatName,
-      lastMessage: "No messages yet",
-    };
+    try {
+      const response = await fetch("http://localhost:5000/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: newChatName,
+          members: ["6a2b62a678be12e3114e7084"],
+        }),
+      });
 
-    setConversations((previousConversations) => [
-      ...previousConversations,
-      newConversation
-    ]);
+      const data = await response.json();
 
-    setMessagesByChat((previousMessages) => ({
-      ...previousMessages,
-      [newConversation.id]: [],
-  }));
+      if (!response.ok) {
+        throw new Error(data.message || "Could not create conversation");
+      }
 
-    setSelectedChat(newConversation);
+      setConversations((previousConversations) => [
+        ...previousConversations,
+        data,
+      ]);
+
+      setMessagesByChat((previousMessages) => ({
+        ...previousMessages,
+        [data._id]: [],
+    }));
+
+    setSelectedChat(data);
     setNewChatName("");
     setShowNewChat(false);
+    } catch (error) {
+      console.error("Create chat error:", error);
+    }
   }
+
 
   return (
     <div className="chat-page">
@@ -135,7 +138,7 @@ export default function Chat() {
 
         {conversations.map((conversation) => (
           <button
-            key={conversation.id}
+            key={conversation._id}
             type="button"
             className="chat-list-item"
             onClick={() => setSelectedChat(conversation)}
@@ -147,14 +150,16 @@ export default function Chat() {
       </aside>
 
       <main className="chat-main">
+        {selectedChat ? (
+          <>
         <header className="chat-header">
-          <h2>{selectedChat.name}</h2>
+          <h2>{selectedChat?.name || "Select a chat"}</h2>
         </header>
 
         <div className="messages">
           {currentMessages.map((message) => (
             <div
-              key={message.id}
+              key={message._id}
               className={
                 message.sender === "Me"
                   ? "sent-message"
@@ -176,6 +181,10 @@ export default function Chat() {
 
           <button type="submit">Send</button>
         </form>
+        </>
+        ) : (
+          <p>No chat selected</p>
+        )}
       </main>
     </div>
   );
