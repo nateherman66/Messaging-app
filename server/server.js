@@ -4,16 +4,13 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
 const app = express();
-
 const User = require("./models/User");
 const auth = require("./middleware/auth");
-
+const Conversation = require("./models/Conversation");
 app.use(cors());
 app.use(express.json());
 
-//console.log("URI:", process.env.MONGO_URI);
 console.log("MONGO_URI exists:", !!process.env.MONGO_URI);
 console.log("Trying to connect to MongoDB...");
 mongoose.connect(process.env.MONGO_URI)
@@ -103,6 +100,40 @@ app.post("/login", async (req, res) => {
         res.status(500).json({ message: "Server error"});
     }
 });
+
+app.post("/conversations", async (req, res) => {
+    try {
+        const { name, members} = req.body;
+
+        const conversation = await Conversation.create({
+            name,
+            members
+        });
+
+        res.status(201).json(conversation);
+    } catch (error) {
+        console.error("Create conversation error:", error);
+
+        res.status(500).json({
+            message: "Could not create conversation",
+            error: error.message,
+        });
+    }
+});
+
+app.get("/conversations", async (req, res) => {
+    try {
+        const conversations = await Conversations.find();
+
+        res.json(conversation);
+    } catch (error) {
+        console.error("Get conversation error:", error);
+
+        res.status(500).json({
+            message: "Could not retrieve conversations",
+        });
+    }
+    });
 
 app.listen(5000, () => {
     console.log("Server started on port 5000");
