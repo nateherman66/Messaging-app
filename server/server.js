@@ -123,9 +123,9 @@ app.post("/conversations", async (req, res) => {
 
 app.get("/conversations", async (req, res) => {
     try {
-        const conversations = await Conversations.find();
+        const conversations = await Conversation.find();
 
-        res.json(conversation);
+        res.json(conversations);
     } catch (error) {
         console.error("Get conversation error:", error);
 
