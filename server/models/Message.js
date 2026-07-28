@@ -1,10 +1,10 @@
-const mongoose = require("Mongoose");
+const mongoose = require("mongoose");
 const Conversation = require("./Conversation");
 const { applyTimestamps } = require("./User");
 
 const messageSchema = new mongoose.Schema(
     {
-        Conversation: {
+        conversation: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Conversation",
         required: true,
@@ -14,7 +14,7 @@ const messageSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
-        test: {
+        text: {
             type: String,
             required: true,
             trim: true,

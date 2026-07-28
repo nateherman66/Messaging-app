@@ -8,6 +8,7 @@ const app = express();
 const User = require("./models/User");
 const auth = require("./middleware/auth");
 const Conversation = require("./models/Conversation");
+const Message = require("./models/Message");
 app.use(cors());
 app.use(express.json());
 
@@ -134,6 +135,44 @@ app.get("/conversations", async (req, res) => {
         });
     }
     });
+
+app.post("/messages", async (req, res) => {
+    try {
+        const { conversation, sender, text } = req.body;
+
+        const message = await Message.create({
+            conversation,
+            sender,
+            text,
+        });
+
+        res.status(201).json(message);
+    } catch (error) {
+        console.error("Create message error:", error);
+
+        res.status(500).json({
+            message: "Could not create message",
+            error: error.message,
+        });
+    }
+});
+
+app.get("/messages", async (req, res) => {
+    try {
+        const messages = await Message.find({
+            conversation: req.params.conversationId,
+        }).sort({ createdAt: 1});
+
+        res.status(200).json(message);
+    } catch {
+        console.error("Get messages error:", error);
+
+        res.status(500).jsonn({
+            message: "Could not retrieve messages",
+            error: error.message,
+        });
+    }
+});
 
 app.listen(5000, () => {
     console.log("Server started on port 5000");
