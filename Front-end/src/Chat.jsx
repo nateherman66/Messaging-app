@@ -6,23 +6,36 @@ export default function Chat() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messagesByChat, setMessagesByChat] = useState({});
   const [newMessage, setNewMessage] = useState("");
-   const [showNewChat, setShowNewChat] = useState(false);
+  const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState("");
 
+  const token = localStorage.getItem("token");
 
-  const currentMessages = selectedChat 
-  ? messagesByChat[selectedChat._id] || []
-  : [];
-  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const storedUser = localStorage.getItem("user");
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+
+  const currentMessages = selectedChat
+    ? messagesByChat[selectedChat._id] || []
+    : [];
 
   useEffect(() => {
     async function loadConversations() {
       try {
-        const response = await fetch("http://localhost:5000/conversations");
+        const response = await fetch(
+          "http://localhost:5000/conversations",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message);
+          throw new Error(
+            data.message || "Could not load conversations"
+          );
         }
 
         setConversations(data);
@@ -34,22 +47,34 @@ export default function Chat() {
         console.error("Load conversations error:", error);
       }
     }
-    loadConversations();
-  }, []);
+
+    if (token) {
+      loadConversations();
+    }
+  }, [token]);
 
   useEffect(() => {
     async function loadMessages() {
-      if (!selectedChat) return;
+      if (!selectedChat) {
+        return;
+      }
 
       try {
         const response = await fetch(
-            `http://localhost:5000/messages/${selectedChat._id}`
+          `http://localhost:5000/messages/${selectedChat._id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Could not load message");
+          throw new Error(
+            data.message || "Could not load messages"
+          );
         }
 
         setMessagesByChat((previousMessages) => ({
@@ -61,33 +86,42 @@ export default function Chat() {
       }
     }
 
-    loadMessages();
-  }, [selectedChat]);
+    if (token) {
+      loadMessages();
+    }
+  }, [selectedChat, token]);
 
   async function sendMessage(event) {
     event.preventDefault();
 
-    if(!selectedChat || !currentUser || newMessage.trim() === "") {
+    const trimmedMessage = newMessage.trim();
+
+    if (!selectedChat || !currentUser || !trimmedMessage) {
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:5000/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          conversation: selectedChat._id,
-          sender: currentUser._id,
-          text: newMessage,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/messages",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            conversation: selectedChat._id,
+            text: trimmedMessage,
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Could not send message");
+        throw new Error(
+          data.message || "Could not send message"
+        );
       }
 
       setMessagesByChat((previousMessages) => ({
@@ -100,55 +134,60 @@ export default function Chat() {
 
       setNewMessage("");
     } catch (error) {
-      console.error("send message error:", error);
+      console.error("Send message error:", error);
     }
-
-    if (newMessage.trim() === "") {
-      return;
-    }
-
-    const message = {
-      id: Date.now(),
-      sender: "Me",
-      text: newMessage,
-    };
-
-    setMessagesByChat((previousMessages) => ({
-      ...previousMessages,
-      [selectedChat._id]: [
-        ...(previousMessages[selectedChat._id] || []),
-        message
-      ],
-    }));
-
-    setNewMessage("");
   }
 
- 
-
-  const createNewChat = async (event) => {
+  async function createNewChat(event) {
     event.preventDefault();
 
-    if (!newChatName.trim()) {
+    const username = newChatName.trim();
+
+    if (!username) {
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:5000/conversations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: newChatName,
-          members: [currentUser._id],
-        }),
-      });
+      const userResponse = await fetch(
+        `http://localhost:5000/users/search?username=${encodeURIComponent(
+          username
+        )}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const foundUser = await userResponse.json();
+
+      if (!userResponse.ok) {
+        throw new Error(
+          foundUser.message || "User not found"
+        );
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/conversations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: foundUser.username,
+            members: [foundUser._id],
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Could not create conversation");
+        throw new Error(
+          data.message || "Could not create conversation"
+        );
       }
 
       setConversations((previousConversations) => [
@@ -159,41 +198,51 @@ export default function Chat() {
       setMessagesByChat((previousMessages) => ({
         ...previousMessages,
         [data._id]: [],
-    }));
+      }));
 
-    setSelectedChat(data);
-    setNewChatName("");
-    setShowNewChat(false);
+      setSelectedChat(data);
+      setNewChatName("");
+      setShowNewChat(false);
     } catch (error) {
       console.error("Create chat error:", error);
     }
   }
 
-
   return (
     <div className="chat-page">
       <aside className="chat-sidebar">
         <h2>Chats</h2>
-        <button 
-        type="button"
-        className="new-chat-button"
-        onClick={() => setShowNewChat(true)}>
+
+        <button
+          type="button"
+          className="new-chat-button"
+          onClick={() => setShowNewChat(true)}
+        >
           + New Chat
         </button>
+
         {showNewChat && (
-          <form className="new-chat-form" onSubmit={createNewChat}>
+          <form
+            className="new-chat-form"
+            onSubmit={createNewChat}
+          >
             <input
-            type="text"
-            placeholder="Enter a username"
-            value={newChatName}
-            onChange={(event) => setNewChatName(event.target.value)}
+              type="text"
+              placeholder="Enter a username"
+              value={newChatName}
+              onChange={(event) =>
+                setNewChatName(event.target.value)
+              }
             />
 
             <button type="submit">Create chat</button>
 
             <button
-            type="button"
-            onClick={() => setShowNewChat(false)}
+              type="button"
+              onClick={() => {
+                setShowNewChat(false);
+                setNewChatName("");
+              }}
             >
               Cancel
             </button>
@@ -216,37 +265,46 @@ export default function Chat() {
       <main className="chat-main">
         {selectedChat ? (
           <>
-        <header className="chat-header">
-          <h2>{selectedChat?.name || "Select a chat"}</h2>
-        </header>
+            <header className="chat-header">
+              <h2>{selectedChat.name}</h2>
+            </header>
 
-        <div className="messages">
-          {currentMessages.map((message) => (
-            <div
-              key={message._id || message.id}
-              className={
-                message.sender?._id === currentUser?._id
-                  ? "sent-message"
-                  : "received-message"
-              }
-            >
-              <strong>{message.sender?.username || "Unknown user"}</strong>
-              <div> {message.text} </div>
+            <div className="messages">
+              {currentMessages.map((message) => (
+                <div
+                  key={message._id || message.id}
+                  className={
+                    message.sender?._id === currentUser?._id
+                      ? "sent-message"
+                      : "received-message"
+                  }
+                >
+                  <strong>
+                    {message.sender?.username ||
+                      "Unknown user"}
+                  </strong>
+
+                  <div>{message.text}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <form className="message-form" onSubmit={sendMessage}>
-          <input
-            type="text"
-            placeholder="Message"
-            value={newMessage}
-            onChange={(event) => setNewMessage(event.target.value)}
-          />
+            <form
+              className="message-form"
+              onSubmit={sendMessage}
+            >
+              <input
+                type="text"
+                placeholder="Message"
+                value={newMessage}
+                onChange={(event) =>
+                  setNewMessage(event.target.value)
+                }
+              />
 
-          <button type="submit">Send</button>
-        </form>
-        </>
+              <button type="submit">Send</button>
+            </form>
+          </>
         ) : (
           <p>No chat selected</p>
         )}

@@ -81,11 +81,11 @@ app.post("/login", async (req, res) => {
     if(!passMatch) {
         return res.status(400).json({ message: "Incorrect password"});
     }
-
+    console.log("JWT_TOKEN during login:", process.env.JWT_TOKEN);
     const token = jwt.sign(
         { userID: user._id },
         process.env.JWT_TOKEN,
-        { expiresIn: "7d" }
+        { expiresIn: "1d" }
     );
 
     res.json({
@@ -103,13 +103,21 @@ app.post("/login", async (req, res) => {
     }
 });
 
-app.post("/conversations", async (req, res) => {
+app.post("/conversations", auth, async (req, res) => {
     try {
-        const { name, members} = req.body;
+        const { name, members = []} = req.body;
+        const LoggedInUserID = req.user.userID;
+
+        const conversationMembers = [
+            ...new Set([
+                LoggedInUserID.toString(),
+                ...members.map((member) => member.toString()),
+            ]),
+        ];
 
         const conversation = await Conversation.create({
             name,
-            members
+            members: connversationMembers,
         });
 
         res.status(201).json(conversation);
@@ -123,27 +131,53 @@ app.post("/conversations", async (req, res) => {
     }
 });
 
-app.get("/conversations", async (req, res) => {
+app.get("/conversations", auth, async (req, res) => {
     try {
-        const conversations = await Conversation.find();
+        const conversations = await Conversation.find({
+            members: req.user.userID,
+        });
 
-        res.json(conversations);
+        res.status(200).json(conversations);
     } catch (error) {
         console.error("Get conversation error:", error);
 
         res.status(500).json({
-            message: "Could not retrieve conversations",
+            message: "Could not load conversations",
+            error: error.message,
         });
     }
     });
 
-app.post("/messages", async (req, res) => {
+app.post("/messages", auth, async (req, res) => {
     try {
-        const { conversation, sender, text } = req.body;
+        const { conversation, text } = req.body;
+
+        if (!conversation) {
+            return res.status(400).json({
+                message: "Conversation is required",
+            });
+        }
+
+        if (!text?.trim()) {
+            return res.status(400).json({
+                message: "Message test is required",
+            });
+        }
+
+        const existingConversation = await Conversation.findOne({
+            _id: conversation,
+            members: req.user.userID,
+        });
+
+        if (!existingConversation) {
+            return res.status(403).json({
+                message: "You do not have access to this conversation",
+            });
+        }
 
         const message = await Message.create({
             conversation,
-            sender,
+            sender: req.user.userID,
             text,
         });
 
@@ -160,8 +194,19 @@ app.post("/messages", async (req, res) => {
     }
 });
 
-app.get("/messages/:conversationId", async (req, res) => {
+app.get("/messages/:conversationId", auth, async (req, res) => {
     try {
+        const conversation = await Conversation.findOne({
+            _id: req.params.conversationId,
+            members: req.user.userID,
+        });
+
+        if (!conversation) {
+            return res.status(403).json({
+                message: "You do not have access to this conversation",
+            });
+        }
+
         const messages = await Message.find({
             conversation: req.params.conversationId,
         })
@@ -179,7 +224,7 @@ app.get("/messages/:conversationId", async (req, res) => {
     }
 });
 
-app.get("/users/search", async (req, res) => {
+app.get("/users/search", auth, async (req, res) => {
     try {
         const username = req.query.username?.trim();
 
@@ -193,6 +238,9 @@ app.get("/users/search", async (req, res) => {
             username: { $regex: `^${username}$`,
             $options: "i" 
         },
+        _id: {
+            $ne: req.user.userID
+        },
         }).select("_id username email");
 
         if (!user) {
@@ -201,7 +249,7 @@ app.get("/users/search", async (req, res) => {
             });
         }
 
-        res.json(user);
+        res.status(200).json(user);
     } catch (error) {
         console.error("Search user error:", error);
 
