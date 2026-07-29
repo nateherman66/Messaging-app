@@ -157,17 +157,17 @@ app.post("/messages", async (req, res) => {
     }
 });
 
-app.get("/messages", async (req, res) => {
+app.get("/messages/:conversationId", async (req, res) => {
     try {
         const messages = await Message.find({
             conversation: req.params.conversationId,
         }).sort({ createdAt: 1});
 
-        res.status(200).json(message);
-    } catch {
+        res.status(200).json(messages);
+    } catch (error) {
         console.error("Get messages error:", error);
 
-        res.status(500).jsonn({
+        res.status(500).json({
             message: "Could not retrieve messages",
             error: error.message,
         });

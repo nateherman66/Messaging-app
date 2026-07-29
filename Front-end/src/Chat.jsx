@@ -36,8 +36,71 @@ export default function Chat() {
     loadConversations();
   }, []);
 
-  function sendMessage(event) {
+  useEffect(() => {
+    async function loadMessages() {
+      if (!selectedChat) return;
+
+      try {
+        const response = await fetch(
+            `http://localhost:5000/messages/${selectedChat._id}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Could not load message");
+        }
+
+        setMessagesByChat((previousMessages) => ({
+          ...previousMessages,
+          [selectedChat._id]: data,
+        }));
+      } catch (error) {
+        console.error("Load messages error:", error);
+      }
+    }
+
+    loadMessages();
+  }, [selectedChat]);
+
+  async function sendMessage(event) {
     event.preventDefault();
+
+    if(!selectedChat || newMessage.trim() === "") {
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          conversation: selectedChat._id,
+          sender: "6a2b62a678be12e3114e7084",
+          text: newMessage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not send message");
+      }
+
+      setMessagesByChat((previousMessages) => ({
+        ...previousMessages,
+        [selectedChat._id]: [
+          ...(previousMessages[selectedChat._id] || []),
+          data,
+        ],
+      }));
+
+      setNewMessage("");
+    } catch (error) {
+      console.error("send message error:", error);
+    }
 
     if (newMessage.trim() === "") {
       return;
@@ -159,7 +222,7 @@ export default function Chat() {
         <div className="messages">
           {currentMessages.map((message) => (
             <div
-              key={message._id}
+              key={message._id || message.id}
               className={
                 message.sender === "Me"
                   ? "sent-message"
