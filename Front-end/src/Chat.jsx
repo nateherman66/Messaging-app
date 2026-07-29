@@ -141,7 +141,7 @@ export default function Chat() {
         },
         body: JSON.stringify({
           name: newChatName,
-          members: ["6a2b62a678be12e3114e7084"],
+          members: [currentUser._id],
         }),
       });
 

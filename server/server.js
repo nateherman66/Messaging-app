@@ -147,6 +147,8 @@ app.post("/messages", async (req, res) => {
             text,
         });
 
+        await message.populate("sender", "username");
+
         res.status(201).json(message);
     } catch (error) {
         console.error("Create message error:", error);
@@ -172,6 +174,39 @@ app.get("/messages/:conversationId", async (req, res) => {
 
         res.status(500).json({
             message: "Could not retrieve messages",
+            error: error.message,
+        });
+    }
+});
+
+app.get("/users/search", async (req, res) => {
+    try {
+        const username = req.query.username?.trim();
+
+        if (!username) {
+            return res.status(400).json({
+                message: "Username is required",
+            });
+        }
+
+        const user = await User.findOne({
+            username: { $regex: `^${username}$`,
+            $options: "i" 
+        },
+        }).select("_id username email");
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error("Search user error:", error);
+
+        res.status(500).json({
+            message: "Could not search for user",
             error: error.message,
         });
     }
