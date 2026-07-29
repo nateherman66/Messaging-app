@@ -27,11 +27,12 @@ export default function Login() {
         console.log(data);
         
         if (!response.ok) {
-            setMessage(data.message || "Login failed");
+            throw new Error(data.message || "Login failed");
             return
         }
 
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/chat");
 
         console.log("Login response:", data);

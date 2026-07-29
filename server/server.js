@@ -92,6 +92,7 @@ app.post("/login", async (req, res) => {
         message: "Login successful",
         token,
         user: {
+            _id: user._id,
             username: user.username,
             email: user.email
         },
@@ -161,7 +162,9 @@ app.get("/messages/:conversationId", async (req, res) => {
     try {
         const messages = await Message.find({
             conversation: req.params.conversationId,
-        }).sort({ createdAt: 1});
+        })
+        .populate("sender", "username")
+        .sort({ createdAt: 1 });
 
         res.status(200).json(messages);
     } catch (error) {

@@ -13,6 +13,7 @@ export default function Chat() {
   const currentMessages = selectedChat 
   ? messagesByChat[selectedChat._id] || []
   : [];
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     async function loadConversations() {
@@ -66,7 +67,7 @@ export default function Chat() {
   async function sendMessage(event) {
     event.preventDefault();
 
-    if(!selectedChat || newMessage.trim() === "") {
+    if(!selectedChat || !currentUser || newMessage.trim() === "") {
       return;
     }
 
@@ -78,7 +79,7 @@ export default function Chat() {
         },
         body: JSON.stringify({
           conversation: selectedChat._id,
-          sender: "6a2b62a678be12e3114e7084",
+          sender: currentUser._id,
           text: newMessage,
         }),
       });
@@ -224,12 +225,13 @@ export default function Chat() {
             <div
               key={message._id || message.id}
               className={
-                message.sender === "Me"
+                message.sender?._id === currentUser?._id
                   ? "sent-message"
                   : "received-message"
               }
             >
-              {message.text}
+              <strong>{message.sender?.username || "Unknown user"}</strong>
+              <div> {message.text} </div>
             </div>
           ))}
         </div>
