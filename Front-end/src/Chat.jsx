@@ -190,14 +190,21 @@ export default function Chat() {
         );
       }
 
-      setConversations((previousConversations) => [
-        ...previousConversations,
-        data,
-      ]);
+      setConversations((previousConversations) => {
+        const alreadyListed = previousConversations.some(
+          (conversation) => conversation._id === data._id
+        );
+
+        if (alreadyListed) {
+          return previousConversations;
+        }
+
+        return [...previousConversations, data];
+      });
 
       setMessagesByChat((previousMessages) => ({
         ...previousMessages,
-        [data._id]: [],
+        [data._id]: previousMessages[data._id] || [],
       }));
 
       setSelectedChat(data);

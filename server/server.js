@@ -81,7 +81,6 @@ app.post("/login", async (req, res) => {
     if(!passMatch) {
         return res.status(400).json({ message: "Incorrect password"});
     }
-    console.log("JWT_TOKEN during login:", process.env.JWT_TOKEN);
     const token = jwt.sign(
         { userID: user._id },
         process.env.JWT_TOKEN,
@@ -106,7 +105,20 @@ app.post("/login", async (req, res) => {
 app.post("/conversations", auth, async (req, res) => {
     try {
         const { name, members = []} = req.body;
-        const LoggedInUserID = req.user.userID;
+        const LoggedInUserID = req.user.userID.toString();
+        const otherUserID = members[0]?.toString();
+
+        if (!otherUserID) {
+            return res.status(400).json({
+                message: "Another user is required",
+            });
+        }
+
+        if (otherUserID === LoggedInUserID) {
+            return res.status(400).json({
+                message: "You cannot create a conversation with yourself",
+            });
+        }
 
         const conversationMembers = [
             ...new Set([
@@ -115,10 +127,33 @@ app.post("/conversations", auth, async (req, res) => {
             ]),
         ];
 
+        if (conversationMembers.length !== 2) {
+            return res.status(400).json({
+                message: "A one-on-one must have two users",
+            });
+        }
+
+         const existingConversation = await Conversation.findOne({
+                members: {
+                        $all: [LoggedInUserID, otherUserID],
+                },
+        });
+
+         if (existingConversation) {
+            console.log("Exisiting conversation found:",
+                existingConversation._id
+            );
+        return res.status(200).json(existingConversation);
+    }
+
         const conversation = await Conversation.create({
             name,
-            members: connversationMembers,
+            members: [LoggedInUserID, otherUserID],
         });
+
+        console.log("New conversation created:",
+            conversation._id
+        );
 
         res.status(201).json(conversation);
     } catch (error) {
@@ -160,7 +195,7 @@ app.post("/messages", auth, async (req, res) => {
 
         if (!text?.trim()) {
             return res.status(400).json({
-                message: "Message test is required",
+                message: "Message text is required",
             });
         }
 
@@ -178,7 +213,7 @@ app.post("/messages", auth, async (req, res) => {
         const message = await Message.create({
             conversation,
             sender: req.user.userID,
-            text,
+            text: text.trim(),
         });
 
         await message.populate("sender", "username");
