@@ -215,6 +215,13 @@ export default function Chat() {
     }
   }
 
+  function getConversationName(conversation) {
+    const otherUser = conversation.members?.find(
+      (member) => member._id !== currentUser?._id
+    );
+    return otherUser?.username || conversation.name || "Unknown user";
+  }
+
   return (
     <div className="chat-page">
       <aside className="chat-sidebar">
@@ -263,7 +270,7 @@ export default function Chat() {
             className="chat-list-item"
             onClick={() => setSelectedChat(conversation)}
           >
-            <strong>{conversation.name}</strong>
+            <strong>{getConversationName(conversation)}</strong>
             <span>{conversation.lastMessage}</span>
           </button>
         ))}
@@ -273,7 +280,7 @@ export default function Chat() {
         {selectedChat ? (
           <>
             <header className="chat-header">
-              <h2>{selectedChat.name}</h2>
+              <h2>{getConversationName(selectedChat)}</h2>
             </header>
 
             <div className="messages">

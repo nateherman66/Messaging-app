@@ -170,7 +170,7 @@ app.get("/conversations", auth, async (req, res) => {
     try {
         const conversations = await Conversation.find({
             members: req.user.userID,
-        });
+        }).populate("members", "username");
 
         res.status(200).json(conversations);
     } catch (error) {
